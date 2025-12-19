@@ -187,7 +187,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
   - `h.num_channels != 2`：確認是否為立體聲。
 
   - `h.bits_per_sample != 16`：確認是否為 16-bit PCM。
-   若不符合，關閉檔案 fclose(fp) 並回傳 -1。
+   若不符合，關閉檔案 `fclose(fp)` 並回傳 -1。
 
 
 - 計算與分配記憶體：
