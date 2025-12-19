@@ -11,6 +11,22 @@
 
 ## 目錄
 
+1.標頭與常數定義
+
+2.WAV 檔案結構定義
+
+3.WAV 檔案讀取函數（read_wav_stereo）
+
+4.WAV 檔案寫入函數（write_wav_stereo）
+
+5.FIR 濾波器設計函數（fir_design）
+
+6.多相濾波器分解函數（polyphase_decompose）
+
+7.多相取樣率轉換函數（src_polyphase）
+
+8.主程式（Main Function）
+
 
 
 ---
@@ -76,7 +92,7 @@ typedef struct {
 } WAVHeader;
 ```
 
-
+說明：
 
 
 
@@ -128,7 +144,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
 ```
 
-
+說明：
 
 
 
