@@ -31,17 +31,9 @@
 #define Wc  (PI/M)
 ```
 
-\subsection*{Header Files and Macro Definitions}
+說明：
 
-\begin{itemize}
-    \item \texttt{\#include <stdio.h>, <stdint.h>, <stdlib.h>, <string.h>}：提供檔案 I/O、固定長度整數型別、動態記憶體配置與字串處理功能。
-    \item \texttt{\#include <math.h>}：提供數學運算函式（如 \texttt{sin()}、\texttt{cos()}），用於 FIR 濾波器設計。
-    \item $\texttt{PI} = 3.14159265359$：圓周率常數。
-    \item $\texttt{L} = 80$：取樣率轉換中的內插倍率（upsampling factor）。
-    \item $\texttt{M} = 441$：取樣率轉換中的抽取倍率（downsampling factor）。
-    \item $\texttt{P} = 1025$：FIR 低通濾波器的 tap 數。
-    \item $\texttt{Wc} = \frac{\pi}{M}$：正規化截止角頻率，用於防止取樣率轉換時產生混疊。
-\end{itemize}
+
 
 
 ## 2. WAV檔案結構定義
@@ -273,14 +265,6 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 	*N_out = n;
 } 
 ```
-
-說明：
-設定 RC 濾波器參數：
-
-- `T`：取樣週期 (1/fs)。
-- `R`：電阻（固定 1kΩ）。
-- `C`：依頻率計算電容值。
-- `a`：離散化濾波係數。
 
 ## 8. 初始化濾波暫存
 
