@@ -302,9 +302,9 @@ void fir_design(double *h)
 
 
 說明:
-- 1.計算濾波器中心索引 `mid = (P-1)/2`。
+- ### 1.計算濾波器中心索引 `mid = (P-1)/2`。
 
-- 2.`for` 迴圈：
+- ### 2.`for` 迴圈：
 
    - 計算對應的 `m = n - mid`。
 
@@ -318,7 +318,7 @@ void fir_design(double *h)
 
    - 將 sinc 與窗函數相乘得到濾波器脈衝響應 `h[n] = sinc * w`。
 
-- 3.正規化濾波器係數：
+- ### 3.正規化濾波器係數：
 
   - 先計算總和 `sum = Σ h[n]`。
 
@@ -353,11 +353,11 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 ### polyphase_decompose使用原因: 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
 ### 所以這些為0的值去做convolution基本上就是浪費時間和計算量，那為了解決這個問題才會使用polyphase_decompose，以跳過某些頻率響應的值以減少花費的時間與計算量。
 
-- 1.初始化變數：
+- ### 1.初始化變數：
 
   - `max_len = 0`，用來記錄所有相位中最長的濾波器長度。
 
-- 2.外層迴圈 `for(r = 0; r < L; r++)`：
+- ### 2.外層迴圈 `for(r = 0; r < L; r++)`：
 
   - 處理每個相位 r。
 
@@ -479,13 +479,13 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
 
  ### 程式碼說明
-- # 1.初始化變數：
+- ### 1.初始化變數：
 
   - `n = 0`，輸出樣本索引。
 
   - `acc`，暫存累加值。
 
-- # 2.迴圈 `while(1)`：
+- ### 2.迴圈 `while(1)`：
 
   - 計算相位索引 `r = (n * M) % L`，對應於多相濾波器的哪一相。
 
@@ -509,7 +509,7 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
   - 將累加結果存入輸出陣列 `y[n++]`。
 
-- # 3.將輸出樣本數存入 `*N_out`。
+- ### 3.將輸出樣本數存入 `*N_out`。
 
 ## 8. 主程式（Main Function）
 
