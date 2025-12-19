@@ -94,10 +94,35 @@ typedef struct {
 
 說明：
 
+- `riff`：標示檔案為 RIFF 格式
+
+- `chunk_size`：整個 WAV 檔案大小
+
+- `wave`：標示音訊格式為 WAVE
+
+- `fmt`：格式區塊識別字串 "fmt "
+
+- `subchunk1_size`：格式區塊大小（PCM 通常為 16）
+
+- `audio_format`：音訊格式（PCM 為 1）
+
+- `num_channels`：聲道數（1 = 單聲道，2 = 立體聲）
+
+- `sample_rate`：取樣率（Hz）
+
+- `byte_rate`：每秒資料位元組數
+
+- `block_align`：每個取樣框架的位元組數
+
+- `bits_per_sample`：每個取樣的位元數
+
+- `data`：資料區塊識別字串 "data"
+
+- `data_size`：實際音訊資料大小
 
 
 
-## 3. 檢查命令列參數
+## 3. WAV 檔案讀取函數（read_wav_stereo）
 
 ```c
 int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int *N, int *fs)
