@@ -350,7 +350,7 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 ```
 
 說明:
-- 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
+- polyphase_decompose使用原因: 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
 所以這些為0的值去做convolution基本上就是浪費時間和計算量，那為了解決這個問題才會使用polyphase_decompose，以跳過某些頻率響應的值以減少花費的時間與計算量。
 
 - 初始化變數：
@@ -427,7 +427,7 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 
 說明:
 
-# 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的推導
+# 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的數學推導
 
 考慮取樣率轉換比例為 $L/M$ 的多相 SRC，理想輸出可寫為：
 
@@ -447,9 +447,9 @@ $$x_{\uparrow}[\ell] \neq 0 \iff \ell \equiv 0 \pmod{L}$$
 
 $$nM - m = Lk \implies m = nM - Lk, \quad k \in \mathbb{Z}$$
 
-> **說明**：這一步是利用上採樣後訊號的零值結構，排除不必要的計算。
+這一步是利用上採樣後訊號的零值，排除不必要的計算。
 
-### Step 2：對 $m$ 做模 $L$ 分解（多相分解）
+### Step 2：對 $m$ 做 $L$ 分解（多相分解）
 
 任何整數 $m$ 可唯一寫為：
 
@@ -459,7 +459,7 @@ $$m = k'L + r, \quad r \in \{0, 1, \dots, L-1\}$$
 
 $$k'L + r = nM - Lk \implies nM - r = (k + k') L$$
 
-> **說明**：這一步把濾波器分解成 $L$ 個相位，每個 phase 有自己的一組濾波器係數。
+這一步把濾波器分解成 $L$ 個相位，每個 phase 有自己的一組濾波器係數。
 
 ### Step 3：推出 Phase 指數 $r$
 
@@ -467,7 +467,7 @@ $$k'L + r = nM - Lk \implies nM - r = (k + k') L$$
 
 $$\boxed{r = (nM) \bmod L}$$
 
-> **說明**：$r$ 表示第 $n$ 個輸出樣本應該使用哪一個子濾波器分支。
+ $r$ 表示第 $n$ 個輸出樣本應該使用哪一個子濾波器分支。
 
 ### Step 4：推出輸入索引基準 $k_0$
 
@@ -475,7 +475,10 @@ $$\boxed{r = (nM) \bmod L}$$
 
 $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
-> **說明**：$k_0$ 是計算第 $n$ 個輸出時，在輸入訊號中對齊的基準位置。
+ $k_0$ 是計算第 $n$ 個輸出時，在輸入訊號中對齊的基準位置。
+
+
+ ### 程式碼說明
 - 初始化變數：
 
   - `n = 0`，輸出樣本索引。
