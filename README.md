@@ -426,6 +426,56 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 ```
 
 說明:
+
+# 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的推導
+
+考慮取樣率轉換比例為 $L/M$ 的多相 SRC，理想輸出可寫為：
+
+$$y[n] = \sum_m h[m] x_{\uparrow}[nM - m]$$
+
+其中 $x_{\uparrow}[n]$ 是上採樣 $L$ 倍後的訊號，滿足：
+
+$$x_{\uparrow}[\ell] \neq 0 \iff \ell \equiv 0 \pmod{L}$$
+
+也就是上採樣後訊號在非 $L$ 的倍數位置都是 0。
+
+---
+
+### Step 1：找出對輸出有貢獻的濾波器係數 $m$
+
+由於卷積中只有 $x_{\uparrow}[nM - m] \neq 0$ 的項才會對輸出有貢獻，因此必須滿足：
+
+$$nM - m = Lk \implies m = nM - Lk, \quad k \in \mathbb{Z}$$
+
+> **說明**：這一步是利用上採樣後訊號的零值結構，排除不必要的計算。
+
+### Step 2：對 $m$ 做模 $L$ 分解（多相分解）
+
+任何整數 $m$ 可唯一寫為：
+
+$$m = k'L + r, \quad r \in \{0, 1, \dots, L-1\}$$
+
+代入 Step 1 的結果 $m = nM - Lk$ 得：
+
+$$k'L + r = nM - Lk \implies nM - r = (k + k') L$$
+
+> **說明**：這一步把濾波器分解成 $L$ 個相位，每個 phase 有自己的一組濾波器係數。
+
+### Step 3：推出 Phase 指數 $r$
+
+上式表示 $nM - r$ 必須能被 $L$ 整除，因此：
+
+$$\boxed{r = (nM) \bmod L}$$
+
+> **說明**：$r$ 表示第 $n$ 個輸出樣本應該使用哪一個子濾波器分支。
+
+### Step 4：推出輸入索引基準 $k_0$
+
+我們定義 $k_0 = k + k'$ 為對應原始輸入序列 $x[k]$ 的索引。由 $nM - r = Lk_0$ 可得：
+
+$$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
+
+> **說明**：$k_0$ 是計算第 $n$ 個輸出時，在輸入訊號中對齊的基準位置。
 - 初始化變數：
 
   - `n = 0`，輸出樣本索引。
