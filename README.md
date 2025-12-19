@@ -427,7 +427,7 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 
 說明:
 
-## 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的數學推導
+### 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的數學推導
 
 考慮取樣率轉換比例為 $L/M$ 的多相 SRC，理想輸出可寫為：
 
@@ -479,13 +479,13 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
 
  ### 程式碼說明
-- 1.初始化變數：
+- # 1.初始化變數：
 
   - `n = 0`，輸出樣本索引。
 
   - `acc`，暫存累加值。
 
-- 2.迴圈 `while(1)`：
+- # 2.迴圈 `while(1)`：
 
   - 計算相位索引 `r = (n * M) % L`，對應於多相濾波器的哪一相。
 
@@ -509,7 +509,7 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
   - 將累加結果存入輸出陣列 `y[n++]`。
 
-- 3.將輸出樣本數存入 `*N_out`。
+- # 3.將輸出樣本數存入 `*N_out`。
 
 ## 8. 主程式（Main Function）
 
