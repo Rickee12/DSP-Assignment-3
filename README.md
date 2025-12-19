@@ -11,25 +11,6 @@
 
 ## 目錄
 
-1.標頭與常數定義
-
-2.WAV 檔案結構定義
-
-3.檢查命令列參數
-
-4.開啟與讀取 WAV 檔頭
-
-5.讀取 PCM 音訊資料
-
-6.從檔名解析濾波 cutoff frequency
-
-7.設定 RC 濾波參數
-
-8.初始化濾波暫存
-
-9.RC 低通濾波處理
-
-10.寫出濾波後 WAV
 
 
 ---
@@ -38,53 +19,52 @@
 
 ```c
 #include <stdio.h>
+#include <stdint.h>
 #include <math.h>
 #include <memory.h>
 #include <stdlib.h>
 #include <string.h>
 #define PI 3.14159265359
+#define L 80
+#define M 441
+#define P 1025
+#define Wc  (PI/M)
 ```
 
-說明:
-引入必要的標頭檔與常數：
+\subsection*{Header Files and Macro Definitions}
 
-- `stdio.h`, `stdlib.h`：檔案操作與動態記憶體分配。
-- `math.h`：數學運算（例如 `round()`）。
-- `string.h`：字串搜尋與擷取頻率。
-- `PI`：供 RC 濾波公式使用。
+\begin{itemize}
+    \item \texttt{\#include <stdio.h>, <stdint.h>, <stdlib.h>, <string.h>}：提供檔案 I/O、固定長度整數型別、動態記憶體配置與字串處理功能。
+    \item \texttt{\#include <math.h>}：提供數學運算函式（如 \texttt{sin()}、\texttt{cos()}），用於 FIR 濾波器設計。
+    \item $\texttt{PI} = 3.14159265359$：圓周率常數。
+    \item $\texttt{L} = 80$：取樣率轉換中的內插倍率（upsampling factor）。
+    \item $\texttt{M} = 441$：取樣率轉換中的抽取倍率（downsampling factor）。
+    \item $\texttt{P} = 1025$：FIR 低通濾波器的 tap 數。
+    \item $\texttt{Wc} = \frac{\pi}{M}$：正規化截止角頻率，用於防止取樣率轉換時產生混疊。
+\end{itemize}
+
 
 ## 2. WAV檔案結構定義
 
 ```c
 typedef struct {
-    char chunkID[4];     
-    unsigned int chunkSize;
-    char format[4];      
-} RIFFHeader;
-
-typedef struct {
-    char subchunk1ID[4]; 
-    unsigned int subchunk1Size; 
-    unsigned short audioFormat; 
-    unsigned short numChannels; 
-    unsigned int sampleRate;    
-    unsigned int byteRate;      
-    unsigned short blockAlign;  
-    unsigned short bitsPerSample;
-} FmtSubchunk;
-
-typedef struct {
-    char subchunk2ID[4]; 
-    unsigned int subchunk2Size;
-} DataSubchunk;
+    char riff[4];
+    uint32_t chunk_size;
+    char wave[4];
+    char fmt[4];
+    uint32_t subchunk1_size;
+    uint16_t audio_format;
+    uint16_t num_channels;
+    uint32_t sample_rate;
+    uint32_t byte_rate;
+    uint16_t block_align;
+    uint16_t bits_per_sample;
+    char data[4];
+    uint32_t data_size;
+} WAVHeader;
 ```
 
-說明：
-這三個結構對應 WAV 檔案格式：
 
-1. `RIFFHeader`：WAV 主標頭，包含 `"RIFF"` 與 `"WAVE"` 標誌。
-2. `FmtSubchunk`：音訊格式資訊（取樣率、聲道數、位元深度等）。
-3. `DataSubchunk`：音訊資料段標頭，描述資料長度。
 
 
 
@@ -92,46 +72,82 @@ typedef struct {
 ## 3. 檢查命令列參數
 
 ```c
-int main(int argc, char *argv[])
+int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int *N, int *fs)
 {
-    if(argc != 3){
-        printf("Usage: %s in_fn out_fn\n", argv[0]);
-        return 1;
-    }
+	FILE *fp = fopen(filename, "rb");      // Open WAV file in binary read mode
+	
+	// check wav file
+	if(!fp) 
+	{
+		return -1;
+	}
+	
+	WAVHeader h;                               // WAV file header structure
+	fread(&h, sizeof(WAVHeader), 1, fp);        // Read WAV header from file
+	
+	
+	// Check if the WAV file is stereo and 16-bit PCM
+	if(h.num_channels != 2 || h.bits_per_sample != 16)
+	{
+		fclose(fp);
+		return -1;
+	}
+	
+	*fs = h.sample_rate;
+	*N = h.data_size/4;
+	
+	
+	*L_buf = (int16_t*)malloc((*N) * sizeof(int16_t));
+    *R_buf = (int16_t*)malloc((*N) * sizeof(int16_t));
+	
+	// Check if the WAV file is stereo and 16-bit PCM
+	int i;
+	for( i = 0; i < *N; i++)
+	{
+		fread(&(*L_buf)[i], sizeof(int16_t), 1, fp);
+		fread(&(*R_buf)[i], sizeof(int16_t), 1, fp);
+	}
+	fclose(fp);
+	return 0;
+}
 
-    char *in_fn = argv[1];   
-    char *out_fn = argv[2];  
 
 
 
 ```
 
 
-說明：
-確認執行時的輸入參數是否正確：
-
-- `in_fn`：輸入 WAV 檔案名稱。
-- `out_fn`：輸出 WAV 檔案名稱。
-- 若參數不足，程式會提示正確使用方式後結束。
 
 
 
 ## 4. 開啟與讀取 WAV 檔頭
  
  ```c
-    FILE *fp = fopen(in_fn, "rb");  // 以二進位模式開啟輸入 WAV
-    if(!fp){
-        fprintf(stderr, "Cannot open file %s\n", in_fn);
-        return 1;
-    }
-
-    RIFFHeader riff;
-    FmtSubchunk fmt;
-    DataSubchunk data;
-
-    fread(&riff, sizeof(RIFFHeader), 1, fp);
-    fread(&fmt, sizeof(FmtSubchunk), 1, fp);
-    fread(&data, sizeof(DataSubchunk), 1, fp);
+void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t *R_buf, int N, int fs)
+{
+	FILE *fp = fopen(filename, "wb");          // Open file in binary write mode
+	
+	WAVHeader h = {
+        {'R','I','F','F'},
+        36 + N * 4,
+        {'W','A','V','E'},
+        {'f','m','t',' '},
+        16, 1, 2, fs,
+        fs * 4, 4, 16,
+        {'d','a','t','a'},
+        N * 4
+    };
+    
+    fwrite(&h, sizeof(WAVHeader), 1, fp);
+	
+    int i;
+	for(i = 0; i < N; i++)        //Write stereo samples
+	{
+		fwrite(&L_buf[i], sizeof(int16_t), 1, fp);
+		fwrite(&R_buf[i], sizeof(int16_t), 1, fp);
+	}
+	fclose(fp);
+}
 ```
 
 
@@ -149,53 +165,113 @@ int main(int argc, char *argv[])
 ##  5. 讀取 PCM 音訊資料
 
 ```c
-    int fs = fmt.sampleRate;
-    int bitsPerSample = fmt.bitsPerSample;
-    int numChannels = fmt.numChannels;
-    size_t N = data.subchunk2Size / (numChannels * bitsPerSample / 8);
+void fir_design(double *h)
+{
+	int m, n, mid = (P - 1) / 2;  // mid is filter center index
+	double sum = 0;
+	double sinc;
+	for(n = 0; n < P; n++)
+	{
+		m = n - mid;
+		if(m == 0)             //sinc center
+		{
+			sinc = Wc/PI;              
+		}
+		else
+		{
+			sinc = sin(Wc*(m))/(PI*(m));
+		}
+	    double w = 0.54 -0.46*cos((2*PI*n)/(P-1));   //hamming window
+	    h[n] = sinc*w;	      //impulse response
+	}           
+	         
+	for(n = 0; n < P; n++)
+	{
+		sum += h[n];
+	}
+	
+	for(n = 0; n < P; n++)
+	{
+		h[n] /= sum;
+	}
+}
 
-    short *stereo = malloc(N * fmt.numChannels * sizeof(short));
-    fread(stereo, sizeof(short), N*fmt.numChannels, fp);
-    fclose(fp);
 ```
 
-說明：
-從 fmt 區段中取得取樣率、通道數、位元深度。  
-根據資料大小計算樣本數 `N`，並配置記憶體以讀取所有取樣。  
-讀取完畢後關閉檔案。
 
 ## 6. 從檔名解析 cutoff frequency
 
 ```c
-    int f = 0;  // cutoff frequency
-    char *first_f = strchr(in_fn, 'f');
-    if(first_f != NULL){
-        char *second_f = strchr(first_f + 1, 'f');
-        if(second_f != NULL){
-            f = atoi(second_f + 1);
-            printf("Extracted cutoff frequency f = %d Hz\n", f);
-        }
-    }
-    if(f <= 0){
-        fprintf(stderr, "Failed to extract cutoff frequency from filename.\n");
-        return 1;
-    }
+void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phase_len)
+{
+	int n, r, idx;
+	int max_len = 0;  // maximum length among all polyphase filters
+	for(r = 0; r < L; r++)
+	{
+		idx = 0;
+		for(n = r; n < P; n+=L)        // Extract every L-th coefficient starting from index r
+		{
+			h_poly[r][idx] = h[n];
+			idx++;
+		}
+		phase_len[r] = idx;     // Store the number of taps for this phase
+		if(idx > max_len)
+		{
+			max_len = idx;
+		}
+	}
+}
 ```
 
-說明：
 
-透過字串搜尋函式 `strchr()` 找出第二個 `'f'` 之後的數字作為截止頻率。  
-例如：輸入檔名 `"test_f400_in.wav"` → `f = 400 Hz`。  
-若解析失敗則輸出錯誤訊息並結束。
 
 
 ## 7. 設定 RC 濾波參數
 
 ```c
-    double T = 1.0/fs;   // 取樣週期
-    double R = 1000;     
-    double C = 1.0/(2*PI*f*1000);  // cutoff frequency 自動使用 f
-    double a = R*C/(R*C+T);
+void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_poly[L][(P+L-1)/L], const int *phase_len)
+{
+	int k, r, k0, x_idx;
+	int n = 0;
+	double acc;
+	while(1)
+	{
+		r = (n * M) % L;            // Compute phase index (fractional part of n*M/L)
+		k0 = (n * M - r) / L;       // Compute integer input sample index
+		
+		if(k0 >= N_in)
+		{
+			break;
+		}
+		
+		acc = 0.0;  // Reset accumulator for current output sample
+		
+		
+		for(k = 0; k < phase_len[r]; k++)  //convolution
+		{
+			x_idx = k0 - k;
+			if(x_idx >= 0 && x_idx < N_in)
+			{
+				acc += x[x_idx] * h_poly[r][k];
+			}
+		}
+		
+		acc *=  (double)M / (double)L;   
+		
+		if(acc > 32767)       // Saturation to int16 range
+		{
+			acc = 32767;
+		}
+		if(acc < -32768)
+		{
+			acc = -32768;
+		}
+		
+		y[n++] = (int16_t)acc;   // Store output sample and advance output index
+	} 
+	
+	*N_out = n;
+} 
 ```
 
 說明：
@@ -209,80 +285,10 @@ int main(int argc, char *argv[])
 ## 8. 初始化濾波暫存
 
 ```c
-    double out_l = 0, out_r = 0;
-    size_t total_samples = data.subchunk2Size / (numChannels * bitsPerSample / 8);
-```
-
-
-說明：
-初始化濾波暫存與計算總取樣數：
-
-- `out_l`, `out_r`：左右聲道的上一個輸出值，用於一階 RC 濾波計算。
-- `total_samples`：總取樣數 (每個通道的樣本數)，用於迴圈處理整個音訊資料。
-
-
-## 9. RC 低通濾波處理
-
-```c
-    for (size_t n = 0; n < total_samples; n+=2){
-        double in_L = stereo[n];       
-        double in_R = stereo[n+1];     
-
-        out_l = (1-a) * in_L + a * out_l;
-        out_r = (1-a) * in_R + a * out_r;
-
-        stereo[n] = (short)round(out_l);
-        stereo[n+1] = (short)round(out_r);
-
-        // 限幅避免溢位
-        if (stereo[n] > 32767) stereo[n] = 32767;
-        if (stereo[n] < -32768) stereo[n] = -32768;
-        if (stereo[n+1] > 32767) stereo[n+1] = 32767;
-        if (stereo[n+1] < -32768) stereo[n+1] = -32768;
-    }
 
 ```
-說明：
-RC 低通濾波處理迴圈：
-
-- 使用 `for` 迴圈逐樣本處理左右聲道 (`n+=2` 遍歷 stereo array)。
-- `in_L`、`in_R`：當前左右聲道輸入樣本。
-- RC 濾波公式：
-- `out_l = (1-a) * in_L + a * out_l;`
-  `out_r = (1-a) * in_R + a * out_r;`
 
 
-其中 `a` 控制平滑程度，上一個輸出影響下一個輸出。
-- 將濾波後結果回寫到 `stereo` 陣列，使用 `round()` 並轉型為 `short`。
-- 限幅 (clipping)：確保輸出值不超過 16-bit PCM 的範圍 [-32768, 32767]，避免溢位。
 
 
-## 10. 寫出濾波後 WAV
 
-```c
-    fp = fopen(out_fn, "wb");
-    if(!fp){ fprintf(stderr, "Cannot save %s\n", out_fn); exit(1); }
-
-    fwrite(&riff, sizeof(RIFFHeader), 1, fp);
-    fwrite(&fmt, sizeof(FmtSubchunk), 1, fp);
-    fwrite(&data, sizeof(DataSubchunk), 1, fp);
-    fwrite(stereo, sizeof(short), N*fmt.numChannels, fp);
-
-    free(stereo);
-    fclose(fp);
-
-    return 0;
-}
-```
-
-說明：
-寫出濾波後的 WAV 檔案：
-
-- `fopen(out_fn, "wb")`：以二進位寫入模式開啟輸出檔案。
-- 若開檔失敗，輸出錯誤訊息並結束程式。
-- `fwrite`：
-  - 先寫入 `RIFFHeader`、`FmtSubchunk`、`DataSubchunk` 標頭。
-  - 再寫入濾波後的 PCM 音訊資料 `stereo`。
-- 釋放動態配置的記憶體 `free(stereo)`。
-- 關閉檔案 `fclose(fp)`。
-- 程式結束 `return 0;`。
