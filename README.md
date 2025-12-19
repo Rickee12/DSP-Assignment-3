@@ -155,20 +155,21 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 	*N = h.data_size/4;
 	
 	
-	*L_buf = (int16_t*)malloc((*N) * sizeof(int16_t));
-    *R_buf = (int16_t*)malloc((*N) * sizeof(int16_t));
+	*L_buf = (int16_t*)malloc((*N) * sizeof(int16_t));    // Allocate memory for left channel
+    *R_buf = (int16_t*)malloc((*N) * sizeof(int16_t));    // Allocate memory for right channel
 	
-	// Check if the WAV file is stereo and 16-bit PCM
+	
+	//Read stereo samples
 	int i;
 	for( i = 0; i < *N; i++)
 	{
-		fread(&(*L_buf)[i], sizeof(int16_t), 1, fp);
-		fread(&(*R_buf)[i], sizeof(int16_t), 1, fp);
+		fread(&(*L_buf)[i], sizeof(int16_t), 1, fp);     
+		fread(&(*R_buf)[i], sizeof(int16_t), 1, fp);     
 	}
-	fclose(fp);
+	
+	fclose(fp);  //close file
 	return 0;
 }
-
 
 
 
@@ -198,7 +199,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
 - 讀取 PCM 音訊資料：
 
-  - 使用迴圈 `for(i=0;i<*N;i++)`，依序讀取左、右聲道樣本。
+  - 使用 `for`迴圈依序讀取左、右聲道樣本。
 
 - 關閉檔案：
 
@@ -210,7 +211,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
 
 
-## 4. 開啟與讀取 WAV 檔頭
+## 4. WAV 檔案寫入函數（write_wav_stereo）
  
  ```c
 void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t *R_buf, int N, int fs)
@@ -228,15 +229,18 @@ void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t 
         N * 4
     };
     
-    fwrite(&h, sizeof(WAVHeader), 1, fp);
+    fwrite(&h, sizeof(WAVHeader), 1, fp);  // Write WAV header to file
 	
+	
+	//Write stereo samples
     int i;
-	for(i = 0; i < N; i++)        //Write stereo samples
+	for(i = 0; i < N; i++)        
 	{
-		fwrite(&L_buf[i], sizeof(int16_t), 1, fp);
-		fwrite(&R_buf[i], sizeof(int16_t), 1, fp);
+		fwrite(&L_buf[i], sizeof(int16_t), 1, fp);  
+		fwrite(&R_buf[i], sizeof(int16_t), 1, fp);   
 	}
-	fclose(fp);
+	
+	fclose(fp);   //close file
 }
 ```
 
@@ -257,7 +261,7 @@ void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t 
 
 
 
-##  5. 讀取 PCM 音訊資料
+##  5. FIR 濾波器設計函數（fir_design）
 
 ```c
 void fir_design(double *h)
@@ -265,6 +269,7 @@ void fir_design(double *h)
 	int m, n, mid = (P - 1) / 2;  // mid is filter center index
 	double sum = 0;
 	double sinc;
+	
 	for(n = 0; n < P; n++)
 	{
 		m = n - mid;
@@ -279,7 +284,8 @@ void fir_design(double *h)
 	    double w = 0.54 -0.46*cos((2*PI*n)/(P-1));   //hamming window
 	    h[n] = sinc*w;	      //impulse response
 	}           
-	         
+	     
+    // Normalize filter coefficients    
 	for(n = 0; n < P; n++)
 	{
 		sum += h[n];
@@ -294,7 +300,7 @@ void fir_design(double *h)
 ```
 
 
-## 6. 從檔名解析 cutoff frequency
+## 6. 多相濾波器分解函數（polyphase_decompose）
 
 ```c
 void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phase_len)
@@ -321,7 +327,7 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 
 
 
-## 7. 設定 RC 濾波參數
+## 7. 多相取樣率轉換函數（src_polyphase）
 
 ```c
 void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_poly[L][(P+L-1)/L], const int *phase_len)
