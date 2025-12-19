@@ -190,7 +190,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
 - 計算與分配記憶體：
 
-  -`*fs = h.sample_rate`：取得取樣率。
+  - `*fs = h.sample_rate`：取得取樣率。
 
   - `*N = h.data_size / 4`：計算每個聲道的樣本數。
 
@@ -198,7 +198,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
 - 讀取 PCM 音訊資料：
 
-  -使用迴圈 `for(i=0;i<*N;i++)`，依序讀取左、右聲道樣本。
+  - 使用迴圈 `for(i=0;i<*N;i++)`，依序讀取左、右聲道樣本。
 
 - 關閉檔案：
 
@@ -242,11 +242,16 @@ void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t 
 
 
 說明：
-以二進位模式開啟 WAV 檔案，依序讀取：
 
-- RIFF 標頭：確認檔案格式。
-- 格式資訊區（fmt chunk）。
-- 音訊資料區（data chunk）標頭。
+- `fopen(filename, "wb")`：以二進位寫入模式開啟輸出檔案。
+
+- 建立 `WAVHeader h`：設定 RIFF、格式區塊 (fmt) 及資料區塊 (data) 標頭。
+
+- `fwrite(&h, sizeof(WAVHeader), 1, fp)`：將 WAV 標頭寫入檔案。
+
+- `for` 迴圈：將左右聲道的 PCM 音訊資料分別寫入檔案。
+
+- `fclose(fp)`：關閉檔案，完成寫入。
 
 
 
