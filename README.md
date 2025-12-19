@@ -27,6 +27,7 @@
 
 8.主程式（Main Function）
 
+9.總結
 
 
 ---
@@ -348,6 +349,28 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 }
 ```
 
+說明:
+- 初始化變數：
+
+  - `max_len = 0`，用來記錄所有相位中最長的濾波器長度。
+
+- 外層迴圈 `for(r = 0; r < L; r++)`：
+
+  - 處理每個相位 r。
+
+  - 初始化索引 `idx = 0`。
+
+  - 內層迴圈 `for(n = r; n < P; n+=L)`：
+
+    - 從原始 FIR 濾波器係數 h 中，每隔 L 個取一個值，對應到相位 r。
+
+    - 將取出的係數存入 `h_poly[r][idx]`。
+
+    - 索引值加一 `idx++`。
+
+  - 將該相位的係數數量存入 phase_len[r]。
+
+  - 更新最大長度 max_len（若此相位更長）。
 
 
 
