@@ -368,9 +368,9 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 
     - 索引值加一 `idx++`。
 
-  - 將該相位的係數數量存入 phase_len[r]。
+  - 將該相位的係數數量存入 `phase_len[r]`。
 
-  - 更新最大長度 max_len（若此相位更長）。
+  - 更新最大長度 `max_len`（若此相位更長）。
 
 
 
@@ -422,13 +422,46 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 } 
 ```
 
-## 8. 初始化濾波暫存
+說明:
+- 初始化變數：
+
+  - `n = 0`，輸出樣本索引。
+
+  - `acc`，暫存累加值。
+
+- 迴圈 `while(1)`：
+
+  - 計算相位索引 `r = (n * M) % L`，對應於多相濾波器的哪一相。
+
+  - 計算輸入樣本索引 `k0 = (n * M - r) / L`。
+
+  - 若 `k0 >= N_in`，跳出迴圈，表示輸入已用完。
+
+  - 初始化累加器 `acc = 0.0`。
+
+  - 對當前相位的濾波器做卷積：
+
+    - `for(k = 0; k < phase_len[r]; k++)`
+
+       - 計算輸入索引 `x_idx = k0 - k`。
+
+       - 若索引合法 `(0 <= x_idx < N_in)`，將輸入乘上濾波器係數累加到 acc。
+
+  - 將累加值乘上比例 `(double)M / (double)L`，補償取樣率改變造成的增益。
+
+  - 限幅到 `int16` 範圍 [-32768, 32767]。
+
+  - 將累加結果存入輸出陣列 `y[n++]`。
+
+- 將輸出樣本數存入 `*N_out`。
+
+## 8. 主程式（Main Function）
 
 ```c
 
 ```
 
 
-
+## 9. 總結
 
 
