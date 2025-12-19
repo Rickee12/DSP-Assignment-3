@@ -72,6 +72,8 @@
 
 
 
+
+
 ## 2. WAV檔案結構定義
 
 ```c
@@ -119,6 +121,9 @@ typedef struct {
 - `data`：資料區塊識別字串 "data"
 
 - `data_size`：實際音訊資料大小
+
+
+
 
 
 
@@ -170,6 +175,38 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 ```
 
 說明：
+
+- `fopen(filename, "rb")`：以二進位讀取模式開啟輸入 WAV 檔案。
+若開檔失敗，回傳 -1。
+
+- `fread(&h, sizeof(WAVHeader), 1, fp)`：讀取 WAV 標頭資料到 WAVHeader 結構。
+  
+- 格式檢查：
+  - `h.num_channels != 2`：確認是否為立體聲。
+
+  - `h.bits_per_sample != 16`：確認是否為 16-bit PCM。
+   若不符合，關閉檔案 fclose(fp) 並回傳 -1。
+
+
+- 計算與分配記憶體：
+
+  -`*fs = h.sample_rate`：取得取樣率。
+
+  - `*N = h.data_size / 4`：計算每個聲道的樣本數。
+
+  - `*L_buf、*R_buf`：動態分配左右聲道陣列。
+
+- 讀取 PCM 音訊資料：
+
+  -使用迴圈 `for(i=0;i<*N;i++)`，依序讀取左、右聲道樣本。
+
+- 關閉檔案：
+
+  - `fclose(fp)`：關閉 WAV 檔案。
+
+- 回傳值：
+
+  - `return 0`: 成功回傳 0。
 
 
 
