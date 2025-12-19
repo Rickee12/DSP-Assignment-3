@@ -27,7 +27,7 @@
 
 8.主程式（Main Function）
 
-9.總結
+10.總結
 
 
 ---
@@ -513,6 +513,51 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 ## 8. 主程式（Main Function）
 
 ```c
+int main(void)
+{
+	int16_t *L_in, *R_in;
+	int16_t *L_out, *R_out;
+	int N_in, N_out_L, N_out_R;
+	int fs_in, fs_out;
+	const char *input_wav = "C:\\Users\\user\\Downloads\\blue_giant_fragment_44.4kHz_16bits_stereo.wav";
+	const char *output_wav = "C:\\Users\\user\\Downloads\\output_src.wav";
+	
+	// Read input stereo WAV
+	if(read_wav_stereo(input_wav, &L_in, &R_in, &N_in, &fs_in) != 0)
+	{
+		printf("Failed to read WAV file\n");
+        return -1;
+	}
+	printf("input samples = %d, fs = %d HZ\n", N_in, fs_in);
+	
+	// Design FIR filter and decompose into polyphase components
+	double h[P];
+	double h_poly[L][(P+L-1)/L];
+	int phase_len[L];
+	fir_design(h);
+	polyphase_decompose(h, h_poly, phase_len);
+	
+	// Allocate memory for output
+	int max_out = (int)(N_in * ((double)L / M)) + 10;
+	L_out = (int16_t*)malloc(max_out * sizeof(int16_t));
+    R_out = (int16_t*)malloc(max_out * sizeof(int16_t));
+    
+    // Apply polyphase SRC to left and right channels
+    src_polyphase(L_in, N_in, L_out, &N_out_L, h_poly, phase_len);
+    src_polyphase(R_in, N_in, R_out, &N_out_R, h_poly, phase_len);
+
+    int N_out = (N_out_L < N_out_R) ? N_out_L : N_out_R;
+    fs_out = fs_in * L / M;
+    
+    // Write output WAV
+    write_wav_stereo(output_wav, L_out, R_out, N_out, fs_out);
+
+    free(L_in); free(R_in);
+    free(L_out); free(R_out);
+
+    printf("SRC done. Output Fs = %d Hz\n", fs_out);
+    return 0;
+}
 
 ```
 說明：
@@ -532,5 +577,6 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 7.釋放記憶體並結束程式。
 
 
-
+## 9. 主程式（Main Function）
+## 10. 主程式（Main Function）
 
