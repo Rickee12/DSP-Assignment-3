@@ -350,9 +350,8 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 ```
 
 說明:
-因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
+- 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
 所以這些為0的值去做convolution基本上就是浪費時間和計算量，那為了解決這個問題才會使用polyphase_decompose，以跳過某些頻率響應的值以減少花費的時間與計算量。
-
 
 - 初始化變數：
 
