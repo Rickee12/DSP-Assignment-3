@@ -279,9 +279,9 @@ void fir_design(double *h)
 		}
 		else
 		{
-			sinc = sin(Wc*(m))/(PI*(m));
+			sinc = sin( Wc * m) / (PI * m);
 		}
-	    double w = 0.54 -0.46*cos((2*PI*n)/(P-1));   //hamming window
+	    double w = 0.54 - 0.46 * cos(2 * PI * n / (P - 1));   //hamming window
 	    h[n] = sinc*w;	      //impulse response
 	}           
 	     
@@ -298,6 +298,30 @@ void fir_design(double *h)
 }
 
 ```
+
+
+說明:
+- 計算濾波器中心索引 `mid = (P-1)/2`。
+
+- `for` 迴圈：
+
+   - 計算對應的 `m = n - mid`。
+
+   - 計算 sinc 函數：
+
+     - 若 `m = 0`，取 `sinc = Wc / PI`（中心點值）。
+
+     - 否則 `sinc = sin( Wc * m) / (PI * m)`。
+
+   - 計算 Hamming window` w = 0.54 - 0.46 * cos(2 * PI * n / (P - 1))`。
+
+   - 將 sinc 與窗函數相乘得到濾波器脈衝響應 `h[n] = sinc * w`。
+
+- 正規化濾波器係數：
+
+  - 先計算總和 `sum = Σ h[n]`。
+
+  - 再將每個係數除以總和 `h[n] /= sum`，確保 DC gain = 1。
 
 
 ## 6. 多相濾波器分解函數（polyphase_decompose）
