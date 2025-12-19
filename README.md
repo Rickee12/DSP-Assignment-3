@@ -302,9 +302,9 @@ void fir_design(double *h)
 
 
 說明:
-- ### 1.計算濾波器中心索引 `mid = (P-1)/2`。
+- #### 1.計算濾波器中心索引 `mid = (P-1)/2`。
 
-- ### 2.`for` 迴圈：
+- #### 2.`for` 迴圈：
 
    - 計算對應的 `m = n - mid`。
 
@@ -318,7 +318,7 @@ void fir_design(double *h)
 
    - 將 sinc 與窗函數相乘得到濾波器脈衝響應 `h[n] = sinc * w`。
 
-- ### 3.正規化濾波器係數：
+- #### 3.正規化濾波器係數：
 
   - 先計算總和 `sum = Σ h[n]`。
 
@@ -350,14 +350,13 @@ void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phas
 ```
 
 說明:
-### polyphase_decompose使用原因: 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，
-### 所以這些為0的值去做convolution基本上就是浪費時間和計算量，那為了解決這個問題才會使用polyphase_decompose，以跳過某些頻率響應的值以減少花費的時間與計算量。
+#### polyphase_decompose使用原因: 因為upsample時會再輸入之間差L-1個0，那因為convolution的運算是輸入和頻率響應相乘後再不斷累加，所以這些為0的值去做convolution基本上就是浪費時間和計算量，那為了解決這個問題才會使用polyphase_decompose，以跳過某些頻率響應的值以減少花費的時間與計算量。
 
-- ### 1.初始化變數：
+- #### 1.初始化變數：
 
   - `max_len = 0`，用來記錄所有相位中最長的濾波器長度。
 
-- ### 2.外層迴圈 `for(r = 0; r < L; r++)`：
+- #### 2.外層迴圈 `for(r = 0; r < L; r++)`：
 
   - 處理每個相位 r。
 
@@ -441,7 +440,7 @@ $$x_{\uparrow}[\ell] \neq 0 \iff \ell \equiv 0 \pmod{L}$$
 
 ---
 
-### Step 1：找出對輸出有貢獻的濾波器係數 $m$
+#### Step 1：找出對輸出有貢獻的濾波器係數 $m$
 
 由於卷積中只有 $x_{\uparrow}[nM - m] \neq 0$ 的項才會對輸出有貢獻，因此必須滿足：
 
@@ -449,7 +448,7 @@ $$nM - m = Lk \implies m = nM - Lk, \quad k \in \mathbb{Z}$$
 
 這一步是利用上採樣後訊號的零值，排除不必要的計算。
 
-### Step 2：對 $m$ 做 $L$ 分解（多相分解）
+#### Step 2：對 $m$ 做 $L$ 分解（多相分解）
 
 任何整數 $m$ 可唯一寫為：
 
@@ -461,7 +460,7 @@ $$k'L + r = nM - Lk \implies nM - r = (k + k') L$$
 
 這一步把濾波器分解成 $L$ 個相位，每個 phase 有自己的一組濾波器係數。
 
-### Step 3：推出 Phase 指數 $r$
+#### Step 3：推出 Phase 指數 $r$
 
 上式表示 $nM - r$ 必須能被 $L$ 整除，因此：
 
@@ -469,7 +468,7 @@ $$\boxed{r = (nM) \bmod L}$$
 
  $r$ 表示第 $n$ 個輸出樣本應該使用哪一個子濾波器分支。
 
-### Step 4：推出輸入索引基準 $k_0$
+#### Step 4：推出輸入索引基準 $k_0$
 
 我們定義 $k_0 = k + k'$ 為對應原始輸入序列 $x[k]$ 的索引。由 $nM - r = Lk_0$ 可得：
 
@@ -479,13 +478,13 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
 
  ### 程式碼說明
-- ### 1.初始化變數：
+- #### 1.初始化變數：
 
   - `n = 0`，輸出樣本索引。
 
   - `acc`，暫存累加值。
 
-- ### 2.迴圈 `while(1)`：
+- #### 2.迴圈 `while(1)`：
 
   - 計算相位索引 `r = (n * M) % L`，對應於多相濾波器的哪一相。
 
@@ -509,7 +508,7 @@ $$\boxed{k_0 = \frac{nM - r}{L} = \left\lfloor \frac{nM}{L} \right\rfloor}$$
 
   - 將累加結果存入輸出陣列 `y[n++]`。
 
-- ### 3.將輸出樣本數存入 `*N_out`。
+- #### 3.將輸出樣本數存入 `*N_out`。
 
 ## 8. 主程式（Main Function）
 
