@@ -196,7 +196,7 @@ int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int 
 
   - `*N = h.data_size / 4`：計算每個聲道的樣本數。
 
-  - `*L_buf、*R_buf`：動態分配左右聲道陣列。
+  - `*L_buf、*R_buf`：動態分配記憶體給左右聲道陣列。
 
 - 讀取 PCM 音訊資料：
 
