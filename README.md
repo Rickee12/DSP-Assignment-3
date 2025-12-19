@@ -7,24 +7,7 @@
 ---
 
 
-
-
-```c
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-#include <memory.h>
-#include <stdlib.h>
-#include <string.h>
-#define PI 3.14159265359
-#define L 80
-#define M 441
-#define P 1025
-#define Wc  (PI/M)
-
-```
-
-###  Problem 7  RC電路低通濾波器(以C語言撰寫)
+###  LCCDE 低通濾波取樣率轉換(以C語言撰寫)
 
 ## 目錄
 
