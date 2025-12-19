@@ -427,7 +427,7 @@ void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_
 
 說明:
 
-# 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的數學推導
+## 多相 SRC 中 phase $r$ 與輸入索引 $k_0$ 的數學推導
 
 考慮取樣率轉換比例為 $L/M$ 的多相 SRC，理想輸出可寫為：
 
