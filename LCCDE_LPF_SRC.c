@@ -1,0 +1,250 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <math.h>
+#include <memory.h>
+#include <stdlib.h>
+#include <string.h>
+#define PI 3.14159265359
+#define L 80
+#define M 441
+#define P 1025
+#define Wc  (PI/M)
+
+// WAVHeader structure for PCM WAV files
+typedef struct {
+    char riff[4];
+    uint32_t chunk_size;
+    char wave[4];
+    char fmt[4];
+    uint32_t subchunk1_size;
+    uint16_t audio_format;
+    uint16_t num_channels;
+    uint32_t sample_rate;
+    uint32_t byte_rate;
+    uint16_t block_align;
+    uint16_t bits_per_sample;
+    char data[4];
+    uint32_t data_size;
+} WAVHeader;
+
+
+int read_wav_stereo(const char *filename, int16_t **L_buf, int16_t **R_buf, int *N, int *fs)
+{
+	FILE *fp = fopen(filename, "rb");      // Open WAV file in binary read mode
+	
+	// check wav file
+	if(!fp) 
+	{
+		return -1;
+	}
+	
+	WAVHeader h;                               // WAV file header structure
+	fread(&h, sizeof(WAVHeader), 1, fp);        // Read WAV header from file
+	
+	
+	// Check if the WAV file is stereo and 16-bit PCM
+	if(h.num_channels != 2 || h.bits_per_sample != 16)
+	{
+		fclose(fp);
+		return -1;
+	}
+	
+	*fs = h.sample_rate;
+	*N = h.data_size/4;
+	
+	
+	*L_buf = (int16_t*)malloc((*N) * sizeof(int16_t));    // Allocate memory for left channel
+    *R_buf = (int16_t*)malloc((*N) * sizeof(int16_t));    // Allocate memory for right channel
+	
+	
+	//Read stereo samples
+	int i;
+	for( i = 0; i < *N; i++)
+	{
+		fread(&(*L_buf)[i], sizeof(int16_t), 1, fp);     
+		fread(&(*R_buf)[i], sizeof(int16_t), 1, fp);     
+	}
+	
+	fclose(fp);  //close file
+	return 0;
+}
+
+
+void write_wav_stereo(const char *filename, const int16_t *L_buf, const int16_t *R_buf, int N, int fs)
+{
+	FILE *fp = fopen(filename, "wb");          // Open file in binary write mode
+	
+	WAVHeader h = {
+        {'R','I','F','F'},
+        36 + N * 4,
+        {'W','A','V','E'},
+        {'f','m','t',' '},
+        16, 1, 2, fs,
+        fs * 4, 4, 16,
+        {'d','a','t','a'},
+        N * 4
+    };
+    
+    fwrite(&h, sizeof(WAVHeader), 1, fp);  // Write WAV header to file
+	
+	
+	//Write stereo samples
+    int i;
+	for(i = 0; i < N; i++)        
+	{
+		fwrite(&L_buf[i], sizeof(int16_t), 1, fp);  
+		fwrite(&R_buf[i], sizeof(int16_t), 1, fp);   
+	}
+	
+	fclose(fp);   //close file
+}
+
+
+//*filter disign
+void fir_design(double *h)
+{
+	int m, n, mid = (P - 1) / 2;  // mid is filter center index
+	double sum = 0;
+	double sinc;
+	
+	for(n = 0; n < P; n++)
+	{
+		m = n - mid;
+		if(m == 0)             //sinc center
+		{
+			sinc = Wc/PI;              
+		}
+		else
+		{
+			sinc = sin( Wc * m) / (PI * m);
+		}
+	    double w = 0.54 - 0.46 * cos(2 * PI * n / (P - 1));   //hamming window
+	    h[n] = sinc*w;	      //impulse response
+	}           
+	     
+    // Normalize filter coefficients    
+	for(n = 0; n < P; n++)
+	{
+		sum += h[n];
+	}
+	
+	for(n = 0; n < P; n++)
+	{
+		h[n] /= sum;
+	}
+}
+
+/*polyphase_decompose*/
+void polyphase_decompose(const double *h, double h_poly[L][(P+L-1)/L], int *phase_len)
+{
+	int n, r, idx;
+	int max_len = 0;  // maximum length among all polyphase filters
+	for(r = 0; r < L; r++)
+	{
+		idx = 0;
+		for(n = r; n < P; n+=L)        // Extract every L-th coefficient starting from index r
+		{
+			h_poly[r][idx] = h[n];
+			idx++;
+		}
+		phase_len[r] = idx;     // Store the number of taps for this phase
+		if(idx > max_len)
+		{
+			max_len = idx;
+		}
+	}
+}
+
+/* Sample Rate Conversion */
+void src_polyphase(const int16_t *x, int N_in, int16_t *y, int *N_out, double h_poly[L][(P+L-1)/L], const int *phase_len)
+{
+	int k, r, k0, x_idx;
+	int n = 0;
+	double acc;
+	while(1)
+	{
+		r = (n * M) % L;            // Compute phase index (fractional part of n*M/L)
+		k0 = (n * M - r) / L;       // Compute integer input sample index
+		
+		if(k0 >= N_in)
+		{
+			break;
+		}
+		
+		acc = 0.0;  // Reset accumulator for current output sample
+		
+		
+		for(k = 0; k < phase_len[r]; k++)  //convolution
+		{
+			x_idx = k0 - k;
+			if(x_idx >= 0 && x_idx < N_in)
+			{
+				acc += x[x_idx] * h_poly[r][k];
+			}
+		}
+		
+		acc *=  (double)M / (double)L;   
+		
+		if(acc > 32767)       // Saturation to int16 range
+		{
+			acc = 32767;
+		}
+		if(acc < -32768)
+		{
+			acc = -32768;
+		}
+		
+		y[n++] = (int16_t)acc;   // Store output sample and advance output index
+	} 
+	
+	*N_out = n;
+} 
+
+int main(void)
+{
+	int16_t *L_in, *R_in;
+	int16_t *L_out, *R_out;
+	int N_in, N_out_L, N_out_R;
+	int fs_in, fs_out;
+	const char *input_wav = "C:\\Users\\user\\Downloads\\blue_giant_fragment_44.4kHz_16bits_stereo.wav";
+	const char *output_wav = "C:\\Users\\user\\Downloads\\output_src.wav";
+	
+	// Read input stereo WAV
+	if(read_wav_stereo(input_wav, &L_in, &R_in, &N_in, &fs_in) != 0)
+	{
+		printf("Failed to read WAV file\n");
+        return -1;
+	}
+	printf("input samples = %d, fs = %d HZ\n", N_in, fs_in);
+	
+	// Design FIR filter and decompose into polyphase components
+	double h[P];
+	double h_poly[L][(P+L-1)/L];
+	int phase_len[L];
+	fir_design(h);
+	polyphase_decompose(h, h_poly, phase_len);
+	
+	// Allocate memory for output
+	int max_out = (int)(N_in * ((double)L / M)) + 10;
+	L_out = (int16_t*)malloc(max_out * sizeof(int16_t));
+    R_out = (int16_t*)malloc(max_out * sizeof(int16_t));
+    
+    // Apply polyphase SRC to left and right channels
+    src_polyphase(L_in, N_in, L_out, &N_out_L, h_poly, phase_len);
+    src_polyphase(R_in, N_in, R_out, &N_out_R, h_poly, phase_len);
+
+    int N_out = (N_out_L < N_out_R) ? N_out_L : N_out_R;
+    fs_out = fs_in * L / M;
+    
+    // Write output WAV
+    write_wav_stereo(output_wav, L_out, R_out, N_out, fs_out);
+
+    free(L_in); free(R_in);
+    free(L_out); free(R_out);
+
+    printf("SRC done. Output Fs = %d Hz\n", fs_out);
+    return 0;
+}
+
+
+
