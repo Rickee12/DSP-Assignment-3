@@ -625,7 +625,7 @@ int main(void)
 
 
 ## 9. FIR low-pass filter作圖
-![FIR Low-pass Filter Magnitude Response](figures/fir_lowpass_magnitude.png)
+![](figure3/FIR Low-pass Filter Magnitude Response.png)
 !(figure3/FIR Low-pass Filter Magnitude Response.png)
 
 FIR 低通濾波器之頻率響應分析
