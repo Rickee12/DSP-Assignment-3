@@ -568,23 +568,23 @@ int main(void)
 
 - #### 1.宣告變數：
 
-      - ` *L_in, *R_in `：輸入左右聲道 PCM 陣列指標。
+     - `*L_in, *R_in`：輸入左右聲道 PCM 陣列指標。
 
-      - `*L_out, *R_out`：輸出左右聲道 PCM 陣列指標。
+     - `*L_out, *R_out`：輸出左右聲道 PCM 陣列指標。
 
-      - `N_in`：輸入樣本數，`N_out_L, N_out_R`：左右輸出樣本數。
+     - `N_in`：輸入樣本數，`N_out_L, N_out_R`：左右輸出樣本數。
 
-      - `fs_in, fs_out`：輸入與輸出取樣率。
+     - `fs_in, fs_out`：輸入與輸出取樣率。
 
-      - `input_wav, output_wav`：輸入與輸出 WAV 檔案路徑。
+     - `input_wav, output_wav`：輸入與輸出 WAV 檔案路徑。
 
 - #### 2.讀取輸入 WAV：
 
-      - 呼叫 `read_wav_stereo`，將檔案讀入左右聲道陣列。
+     - 呼叫 `read_wav_stereo`，將檔案讀入左右聲道陣列。
 
-      - 若失敗，輸出錯誤訊息並結束程式。
+     - 若失敗，輸出錯誤訊息並結束程式。
 
-      - 印出輸入樣本數與取樣率。
+     - 印出輸入樣本數與取樣率。
 
 - #### 3.設計 FIR 濾波器並做多相分解：
 
@@ -596,33 +596,33 @@ int main(void)
 
 - #### 4.配置輸出陣列記憶體：
 
-      - 計算最大輸出樣本數 `max_out`。
+     - 計算最大輸出樣本數 `max_out`。
 
-      - 動態分配 `L_out` 與 `R_out`。
+     - 動態分配 `L_out` 與 `R_out`。
 
 - #### 5.執行多相 SRC：
 
-      - 對左、右聲道分別呼叫 `src_polyphase` 進行取樣率轉換。
+     - 對左、右聲道分別呼叫 `src_polyphase` 進行取樣率轉換。
 
-      - 取左右輸出樣本數最小值作為最終輸出長度 `N_ou`t。
+     - 取左右輸出樣本數最小值作為最終輸出長度 `N_ou`t。
 
-      - 計算輸出取樣率 `fs_out = fs_in * L / M`。
+     - 計算輸出取樣率 `fs_out = fs_in * L / M`。
 
 - #### 6.寫入輸出 WAV：
 
-      - 呼叫`write_wav_stereo` 將轉換後音訊寫入檔案。
+     - 呼叫`write_wav_stereo` 將轉換後音訊寫入檔案。
 
 - #### 7.釋放記憶體與結束程式：
 
-      - 釋放 `*L_in, *R_in, *L_out, *R_out` 的動態記憶體。
+     - 釋放 `*L_in, *R_in, *L_out, *R_out` 的動態記憶體。
 
-      - 印出輸出取樣率訊息。
+	 - 印出輸出取樣率訊息。
 
-      - 程式結束 `return 0`。
+     - 程式結束 `return 0`。
 
 
 ## 9. FIR low-pass filter作圖
-
+(figure3/)
 
 ## 10. 總結
 
