@@ -601,7 +601,7 @@ int main(void)
 
      - 計算最大輸出樣本數 `max_out`。
 
-     - 動態分配 `L_out` 與 `R_out`。
+     - 動態分配記憶體給輸出陣列 `L_out` 與 `R_out`。
 
 - #### 5.執行多相 SRC：
 
