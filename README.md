@@ -568,7 +568,7 @@ int main(void)
 
 #### 1.宣告變數：
 
-      - `*L_in, *R_in`：輸入左右聲道 PCM 陣列指標。
+      - ` *L_in, *R_in `：輸入左右聲道 PCM 陣列指標。
 
       - `*L_out, *R_out`：輸出左右聲道 PCM 陣列指標。
 
@@ -610,7 +610,7 @@ int main(void)
 
 #### 6.寫入輸出 WAV：
 
-      - 呼叫 `write_wav_stereo` 將轉換後音訊寫入檔案。
+      - 呼叫`write_wav_stereo` 將轉換後音訊寫入檔案。
 
 #### 7.釋放記憶體與結束程式：
 
